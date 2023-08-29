@@ -90,7 +90,7 @@ app.post('/webhook', async (req, res) => {
     io.emit('convertedValue', convertedValue);
     io.emit('newGeneration', generations1);
 
-    // console.log({ result1 });
+    console.log({ result1 });
 
     res.status(200).send(generations1);
 });
