@@ -82,7 +82,8 @@ app.post('/webhook', async (req, res) => {
     chain = new ConversationChain({ llm: model, memory: memory });
 
     const result1 = await chain.call({
-        input: `solve ${latexVal} mathematically in not more than 5 steps and show me the correct answer`
+        // input: `solve ${latexVal} mathematically in not more than 5 steps, dont use any word or sentences, only use math numbers and symbols and show me the correct answer`
+        input: `Respond according to the  ${latexVal} in  5 steps and rersspond appropriately, explain in brief and where its been used.`,
     });
 
     generations1 = result1.response;
@@ -90,7 +91,7 @@ app.post('/webhook', async (req, res) => {
     io.emit('convertedValue', convertedValue);
     io.emit('newGeneration', generations1);
 
-    console.log({ result1 });
+    // console.log({ result1 });
 
     res.status(200).send(generations1);
 });
@@ -115,7 +116,7 @@ app.get('/convertedValue', async (req, res) => {
     console.log('API request received from client');
 
     const response = {
-        convertedValue:convertedValue,
+        convertedValue: convertedValue,
     };
     console.log("..............||CONVERTED VALUE||...............",response);
 
@@ -151,7 +152,7 @@ app.post('/chemistryValue', async (req, res) => {
     chain = new ConversationChain({ llm: model, memory: memory });
 
     const chemResult1 = await chain.call({
-        input: `Respond according to the  ${chemVal} in  steps and respond appropriately`,
+        input: `Respond according to the  ${chemVal} in  steps and rersspond appropriately`,
     });
 
     const chemGenerations1 = chemResult1.response;
