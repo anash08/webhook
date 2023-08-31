@@ -115,8 +115,7 @@ app.get('/convertedValue', async (req, res) => {
     console.log('API request received from client');
 
     const response = {
-        result1: generations1,
-        res2: generations2
+        convertedValue:convertedValue,
     };
     console.log("..............||CONVERTED VALUE||...............",response);
 
