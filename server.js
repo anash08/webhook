@@ -8,6 +8,9 @@ const { BufferMemory } = require("langchain/memory");
 const { ConversationChain } = require("langchain/chains");
 const { CacheClient, Configurations, CredentialProvider, } = require("@gomomento/sdk");
 const { MomentoChatMessageHistory } = require("langchain/stores/message/momento");
+const { ChatOpenAI } = require("langchain/chat_models/openai");
+
+
 require('dotenv').config();
 
 // const apiKey = process.env.API_KEY;
@@ -46,13 +49,13 @@ function convertToLatex(input) {
     return latex;
 }
 
-// const client = new CacheClient({
-//     configuration: Configurations.Laptop.v1(),
-//     credentialProvider: CredentialProvider.fromEnvironmentVariable({
-//         environmentVariableName: "API_KEY"
-//     }),
-//     defaultTtlSeconds: 60 * 60 * 24,
-// });
+const client = new CacheClient({
+    configuration: Configurations.Laptop.v1(),
+    credentialProvider: CredentialProvider.fromEnvironmentVariable({
+        environmentVariableName: "MOMENTO_AUTH_TOKEN"
+    }),
+    defaultTtlSeconds: 60 * 60 * 24,
+});
 
 const memory = new BufferMemory();
 
@@ -64,41 +67,62 @@ app.post('/webhook', async (req, res) => {
     const latexVal = convertToLatex(convertedValue);
     console.log("............//this is the latex value", latexVal);
 
-    // const sessionId = new Date().toISOString();
-    // const cacheName = "langchain";
+    const sessionId = new Date().toISOString();
+    const cacheName = "langchain";
 
-    // const chatHistory = await MomentoChatMessageHistory.fromProps({
-    //     client,
-    //     cacheName,
-    //     sessionId,
-    //     sessionTtl: 300,
+    const chatHistory = await MomentoChatMessageHistory.fromProps({
+        client,
+        cacheName,
+        sessionId,
+        sessionTtl: 300,
+    });
+
+    // const model = new Cohere({
+    //     maxTokens: 1000,
+    //     apiKey: "GQ7Zysexx8aB6HGZNpXjrlL27K28ARWPNcPVaa2y",
     // });
 
-    const model = new Cohere({
-        maxTokens: 1000,
-        apiKey: "GQ7Zysexx8aB6HGZNpXjrlL27K28ARWPNcPVaa2y",
-    });
+    const model = new ChatOpenAI({
+        openAIApiKey : "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",
+        modelName: "gpt-3.5-turbo",
+        temperature: 0,
+      });
 
     chain = new ConversationChain({ llm: model, memory: memory });
 
     const result1 = await chain.call({
         // input: `solve ${latexVal} mathematically in not more than 5 steps, dont use any word or sentences, only use math numbers and symbols and show me the correct answer`
-        input: `Respond according to the  ${latexVal} in  5 steps and rersspond appropriately, explain in brief and where its been used.`,
+        // input: `Respond according to the  ${latexVal} in  5 steps and respond appropriately, explain in brief and where its been used.`,
+        input :`Analyze the following ${latexVal} and provide a comprehensive assessment. Determine the following:
+
+       1: Determine if the equation is mathematically correct. If it is incorrect, identify the specific issues.
+        2:Identify the category or field of mathematics to which this equation belongs. Specify if it is related to differentiation, integration, or another area of mathematics.
+        3. Analyze if the equation is solvable. If it is solvable, provide a detailed, step-by-step mathematical solution without using words, indexing the steps as (a), (b), (c), etc. Then, explain the solution in plain language. 
+        4:Determine if this equation is derived from a specific mathematical theorem, concept, or real-world problem. Explain its origin and the context in which it is applied.
+        5:If the equation involves differentiation, explore aspects such as derivatives, implicit differentiation, higher-order derivatives, derivatives of trigonometric and exponential functions, the chain rule, product rule, quotient rule, and implicit differentiation with trigonometry.
+        6:If the equation involves integration, investigate topics like definite integrals, indefinite integrals (antiderivatives), integration by substitution, integration by parts, trigonometric integrals, integration with partial fractions, applications of integration, improper integrals, and integration with trigonometric substitution.
+            
+Please provide a structured analysis that addresses each of these aspects thoroughly. Ensure that, when solving mathematically, you use the appropriate mathematical notation and symbols.
+`
+    
     });
+
 
     generations1 = result1.response;
 
     io.emit('convertedValue', convertedValue);
     io.emit('newGeneration', generations1);
 
-    // console.log({ result1 });
+    console.log({ result1 });
 
     res.status(200).send(generations1);
 });
 
 app.post('/res2', async (req, res) => {
-    const { prompt } = req.body;
-    const res2 = await chain.call({ input: `${prompt}, respond according to the prompt` });
+    const  prompt  = req.body;
+    console.log("****************", prompt);
+    const value = prompt.inputValue
+    const res2 = await chain.call({ input: ` respond according to the ${value}` });
     generations2 = res2.response;
 
     io.emit('newGeneration2', generations2);
